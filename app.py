@@ -58,6 +58,22 @@ penerima = st.text_input("Enter receiver's email , wajob di isi:")
 
 # ------------------------------------------------------------------------------------------------------------------
 
+model_path = 'model_api.pt'
+
+
+def load_model(model_path):
+    """
+    Loads a YOLO object detection model from the specified model_path.
+
+    Parameters:
+        model_path (str): The path to the YOLO model file.
+
+    Returns:
+        A YOLO object detection model.
+    """
+    model = YOLO(model_path)
+    return model
+
 
 def display_tracker_options():
     display_tracker = st.radio("Display Tracker", ('Yes', 'No'))
