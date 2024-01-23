@@ -1,64 +1,27 @@
 # Python In-built packages
 from pathlib import Path
 import PIL
-import cv2
-from pytube import YouTube
 
 # External packages
 import streamlit as st
-
-# Local Modules
-import settings
-import helper
-import settings
 import time
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-import app
+from ultralytics import YOLO
+import time
+import streamlit as st
+import cv2
+from pytube import YouTube
+import time
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 
 
-def send_email(penerima):
-    sender_email = "apialrm727@gmail.com"
-    sender_password = "nvlm ynph suqb xfwl"
-    receiver_email = penerima
-
-    message = MIMEMultipart()
-    message["From"] = sender_email
-    message["To"] = receiver_email
-    message["Subject"] = "API DETECTED"
-
-    body = "SEARCH LOCATION"
-    message.attach(MIMEText(body, "plain"))
-
-    smtp_server = "smtp.gmail.com"
-    smtp_port = 587
-
-    server = smtplib.SMTP(smtp_server, smtp_port)
-    server.starttls()
-
-    server.login(sender_email, sender_password)
-
-    server.sendmail(
-        sender_email, receiver_email, message.as_string())
-
-    server.quit()
-    print("berhasil")
-
-
-# Main page heading
-st.title("Object Detection using YOLOv8")
-
-
-# Sidebar
-st.sidebar.header("ML Model Config")
-
-penerima = st.text_input("Enter receiver's email , wajob di isi:")
-# Model Options
-
-# ------------------------------------------------------------------------------------------------------------------
-
-model_path = 'model_api.pt'
+# Local Modules
+import settings
+import helper
 
 
 def load_model(model_path):
@@ -86,23 +49,38 @@ def display_tracker_options():
 
 def _display_detected_frames(conf, model, st_frame, image, is_display_tracking=None, tracker=None):
 
+    send_email(penerima)
+    """
+    Display the detected objects on a video frame using the YOLOv8 model.
+
+    Args:
+    - conf (float): Confidence threshold for object detection.
+    - model (YoloV8): A YOLOv8 object detection model.
+    - st_frame (Streamlit object): A Streamlit object to display the detected video.
+    - image (numpy array): A numpy array representing the video frame.
+    - is_display_tracking (bool): A flag indicating whether to display object tracking (default=None).
+
+    Returns:
+    None
+    """
+
+    # Resize the image to a standard size
+    image = cv2.resize(image, (720, int(720*(9/16))))
+
     # Display object tracking, if specified
     if is_display_tracking:
         res = model.track(image, conf=conf, persist=True, tracker=tracker)
-        # Resize the image to a standard size
-        image = cv2.resize(image, (720, int(720*(9/16))))
-
     else:
         # Predict the objects in the image using the YOLOv8 model
         res = model.predict(image, conf=conf)
 
     # # Plot the detected objects on the video frame
-        res_plotted = res[0].plot()
-        st_frame.image(res_plotted,
-                       caption='Detected Video',
-                       channels="BGR",
-                       use_column_width=True
-                       )
+    res_plotted = res[0].plot()
+    st_frame.image(res_plotted,
+                   caption='Detected Video',
+                   channels="BGR",
+                   use_column_width=True
+                   )
 
 
 def play_youtube_video(conf, model):
@@ -133,8 +111,6 @@ def play_youtube_video(conf, model):
             while (vid_cap.isOpened()):
                 success, image = vid_cap.read()
                 if success:
-                    send_email(penerima)
-
                     _display_detected_frames(conf,
                                              model,
                                              st_frame,
@@ -174,7 +150,6 @@ def play_rtsp_stream(conf, model):
             while (vid_cap.isOpened()):
                 success, image = vid_cap.read()
                 if success:
-                    send_email(penerima)
                     _display_detected_frames(conf,
                                              model,
                                              st_frame,
@@ -216,7 +191,6 @@ def play_webcam(conf, model):
             while (vid_cap.isOpened()):
                 success, image = vid_cap.read()
                 if success:
-                    send_email(penerima)
                     _display_detected_frames(conf,
                                              model,
                                              st_frame,
@@ -263,7 +237,6 @@ def play_stored_video(conf, model):
             while (vid_cap.isOpened()):
                 success, image = vid_cap.read()
                 if success:
-
                     _display_detected_frames(conf,
                                              model,
                                              st_frame,
@@ -271,8 +244,6 @@ def play_stored_video(conf, model):
                                              is_display_tracker,
                                              tracker
                                              )
-
-                    send_email(penerima)
                 else:
                     vid_cap.release()
                     break
@@ -280,9 +251,45 @@ def play_stored_video(conf, model):
             st.sidebar.error("Error loading video: " + str(e))
 
 
-# ----------------------------------------------------------------------------------------------------
+def send_email(penerima):
+    sender_email = "apialrm727@gmail.com"
+    sender_password = "nvlm ynph suqb xfwl"
+    receiver_email = penerima
+
+    message = MIMEMultipart()
+    message["From"] = sender_email
+    message["To"] = receiver_email
+    message["Subject"] = "API DETECTED"
+
+    body = "SEARCH LOCATION"
+    message.attach(MIMEText(body, "plain"))
+
+    smtp_server = "smtp.gmail.com"
+    smtp_port = 587
+
+    server = smtplib.SMTP(smtp_server, smtp_port)
+    server.starttls()
+
+    server.login(sender_email, sender_password)
+
+    server.sendmail(
+        sender_email, receiver_email, message.as_string())
+
+    server.quit()
+    print("berhasil")
 
 
+# Main page heading
+st.title("Object Detection using YOLOv8")
+
+
+penerima = st.text_input(
+    "Enter receiver's email , wajob di isi contoh:", 'email@gmail.com')
+
+# Sidebar
+st.sidebar.header("ML Model Config")
+
+# Model Options
 model_type = st.sidebar.radio(
     "Select Task", ['Detection'])
 
@@ -291,20 +298,18 @@ confidence = float(st.sidebar.slider(
 
 # Selecting Detection Or Segmentation
 if model_type == 'Detection':
-    model_path = Path('model_api.pt')
+    model_path = Path(settings.DETECTION_MODEL)
 elif model_type == 'Segmentation':
     model_path = Path(settings.SEGMENTATION_MODEL)
 
 # Load Pre-trained ML Model
 try:
-    model = helper.load_model(model_path)
+    model = load_model(model_path)
 except Exception as ex:
     st.error(f"Unable to load model. Check the specified path: {model_path}")
     st.error(ex)
 
 st.sidebar.header("Image/Video Config")
-
-
 source_radio = st.sidebar.radio(
     "Select Source", settings.SOURCES_LIST)
 
@@ -347,32 +352,31 @@ if source_radio == settings.IMAGE:
                 res_plotted = res[0].plot()[:, :, ::-1]
                 st.image(res_plotted, caption='Detected Image',
                          use_column_width=True)
+                send_email(penerima)
                 try:
-
                     with st.expander("Detection Results"):
                         for box in boxes:
-                            send_email(penerima)
+
                             st.write(box.data)
                 except Exception as ex:
                     # st.write(ex)
                     st.write("No image is uploaded yet!")
 
-
 elif source_radio == settings.VIDEO:
-
     play_stored_video(confidence, model)
 
-elif source_radio == settings.WEBCAM:
 
+elif source_radio == settings.WEBCAM:
     play_webcam(confidence, model)
 
-elif source_radio == settings.RTSP:
 
+elif source_radio == settings.RTSP:
     play_rtsp_stream(confidence, model)
 
-elif source_radio == settings.YOUTUBE:
 
+elif source_radio == settings.YOUTUBE:
     play_youtube_video(confidence, model)
+
 
 else:
     st.error("Please select a valid source type!")
