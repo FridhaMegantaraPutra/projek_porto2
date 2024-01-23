@@ -291,7 +291,7 @@ confidence = float(st.sidebar.slider(
 
 # Selecting Detection Or Segmentation
 if model_type == 'Detection':
-    model_path = Path(settings.DETECTION_MODEL)
+    model_path = Path('model_api.pt')
 elif model_type == 'Segmentation':
     model_path = Path(settings.SEGMENTATION_MODEL)
 
